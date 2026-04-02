@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3M Auto Group</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+
+    <div id="mainDashboard" class="dashboard">
+        <img src="images/logo.png" class="logo" style="margin: 42px 0px;">
+        <a href="pages/listings.html" class="btn">Listings 🛒</a>
+        <a href="pages/documents.html" class="btn">Documents 📄</a>
+        <button class="btn" onclick="toggleSocialMedia();">Social Media 👥</button>
+        <div id="socialMediaLinks" class="silentContainer">
+        <a href="https://www.facebook.com/3MAUTOGROUP/" class="btn2" id="facebookButton">Facebook</a>
+        <a href="https://www.google.com" class="btn2" id="instagramButton">Instagram</a>
+        </div>
+        <button class="btn" id="callButton" onclick="callUs();">Call Us📞</button>
+        <a href="pages/adminPanel.html" class="btn" id="listingsMenuButton" style="display: none;">Create Listings➕</a>
+        <a href="pages/decipherId.html" class="btn" id="decipherIdButton">Decipher ID🔑</a>
+        <button class="btn" id="signInButton" onclick="handleGoogleSignIn();">Sign In🌐</button>
+        <button class="btn" id="signOutButton" onclick="handleSignOut();" style="display: none;">Sign Out⭕</button>
+        <a href="pages/aboutUs.html" class="btn">About Us</a>
+    </div>
+    
+    <div id="secondaryDashboard" class="dashboard">
+        <h1 style="font-size: 6rem; margin-bottom: 0px; margin-top: 20px;">3M Auto Group</h1>
+        <h3>1405 S NAPPANEE ST, Elkhart, IN 46516</h2>
+        <div style="height: 30px;"></div>
+        <h2 style="text-decoration: underline;">RECENT LISTINGS:</h2>
+        <div id="recentActivityList"></div>
+    </div>
+
+    <script src="main.js"></script>
+<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithPopup, 
+            GoogleAuthProvider,
+            onAuthStateChanged,
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7P5QVOAH-xBY2tGWTSApoQaU8dRSfCvA",
+            authDomain: "mmm-auto-group-test.firebaseapp.com",
+            projectId: "mmm-auto-group-test",
+            storageBucket: "mmm-auto-group-test.firebasestorage.app",
+            messagingSenderId: "521394611759",
+            appId: "1:521394611759:web:1dae13828195b00748c8da"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        const db = getFirestore(app);
+
+        // 1. SIGN IN (Popup Method)
+        window.handleGoogleSignIn = async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("Success! Logged in as:", result.user.displayName);
+            } catch (error) {
+                console.error("Popup Auth Error:", error.message);
+                alert("Login failed. Check your internet or if the popup was blocked.");
+            }
+        };
+
+        // 2. SIGN OUT
+        window.handleSignOut = () => {
+            signOut(auth).then(() => {
+                console.log("Signed out.");
+            }).catch((error) => {
+                console.error("Sign out error:", error);
+            });
+        };
+
+        // 3. THE OBSERVER (The Brain)
+        onAuthStateChanged(auth, (user) => {
+            const loginBtn = document.getElementById('signInButton');
+            const signOutBtn = document.getElementById('signOutButton');
+            const listingsBtn = document.getElementById('listingsMenuButton');
+
+            if (user) {
+                console.log("User detected by Observer:", user.displayName);
+                
+                // Switch Sign In for Sign Out
+                if (loginBtn) loginBtn.style.background = "#4CAF50";
+                if (loginBtn) loginBtn.innerHTML = "Welcome, " + user.displayName + "👋";
+                if (signOutBtn) signOutBtn.style.display = "block";
+
+                // Role-based button (Case Insensitive)
+                if (user.uid === "NYtvLyGUvhSfFtr0UpukSBwHGYr1") {
+                    if (listingsBtn) listingsBtn.style.display = "block";
+                }
+
+            } else {
+                console.log("No user session active.");
+                
+                // Switch Sign Out for Sign In
+                if (loginBtn) {
+                    loginBtn.style.display = "block";
+                    if (loginBtn) loginBtn.style.background = "";
+                    loginBtn.innerHTML = "Sign In 🌐";
+                }
+                if (signOutBtn) signOutBtn.style.display = "none";
+                if (listingsBtn) listingsBtn.style.display = "none";
+            }
+        });
+
+
+        async function getRecentCars() {
+        const carsRef = collection(db, "cars");
+
+        // 1. Create the query: Order by 'timestamp' descending, stop after 5
+       const recentQuery = query(
+    carsRef, 
+    limit(5)
+);
+
+        try {
+            const querySnapshot = await getDocs(recentQuery);
+            
+            // Clear your "Recent Activity" list before filling it
+            const listContainer = document.getElementById('recentActivityList');
+            listContainer.innerHTML = ""; 
+
+            querySnapshot.forEach((doc) => {
+                const car = doc.id;
+                const data = doc.data();
+
+                console.log(data);
+                
+                // 2. Render each car into your "Recent Activity" 80% space
+                renderRecentItem(car, data);
+            });
+        } catch (error) {
+            console.error("Error fetching recent cars:", error);
+        }
+    }
+
+    function renderRecentItem(id, data) {
+    const listContainer = document.getElementById('recentActivityList');
+    
+    // This creates a simple visual for each car
+    const html = `
+                <a href="pages/listings.html" style="text-decoration: none; color: inherit;">
+                    <div class="grid-dashboard, indexCard">
+                        <img src="${data.image}" alt="${data.make}" style="width: 300px;">
+                        <h3>${data.make} ${data.model} ${data.year}</h3>
+                        <p class="card-price">$${Number(data.price).toLocaleString()}</p>
+
+                        <div class="specs-grid">
+                            <span>🛣️ ${data.mileage} mi</span>
+                            <span>⚙️ ${data.transmission}</span>
+                            <span>⛽ ${data.fuelType}</span>
+                            <span>🚗 ${data.drivetrain}</span>
+                        </div>
+                    </div>
+                </a>
+    `;
+    listContainer.insertAdjacentHTML('beforeend', html);
+    }
+    
+    getRecentCars();
+
+    </script>
+
+</body>
+
+</html>
